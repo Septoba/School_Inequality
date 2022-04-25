@@ -1,0 +1,1439 @@
+---
+title: "Education inequality"
+output: html_document
+---
+
+
+## Introduction
+
+This project addresses inequality of educational opportunity in U.S. high schools. Here we will focus on average student performance on the ACT or SAT exams that students take as part of the college application process.
+
+We expect a range of school performance on these exams, but is school performance predicted by socioeconomic factors? 
+
+$\rightarrow$ Complete the introduction with a description of the problem you are addressing. The introduction should include at least two paragraphs that describe (1) the general problem you are addressing and (2) the specific questions you are asking in this project.
+
+
+## Data Collection
+
+This project utilizes two data sets. The primary data set is the EdGap data set from [EdGap.org](https://www.edgap.org/#5/37.875/-96.987). This data set from 2016 includes information about average ACT or SAT scores for schools and several socioeconomic characteristics of the school district. The secondary data set is basic information about each school from the [National Center for Education Statistics](https://nces.ed.gov/ccd/pubschuniv.asp).
+
+### EdGap data
+
+All socioeconomic data (household income, unemployment, adult educational attainment, and family structure) are from the Census Bureau's American Community Survey. 
+
+[EdGap.org](https://www.edgap.org/#5/37.875/-96.987) report that ACT and SAT score data is from each state's department of education or some other public data release. The nature of the other public data release is not known.
+
+The quality of the census data and the department of education data can be assumed to be reasonably high. 
+
+[EdGap.org](https://www.edgap.org/#5/37.875/-96.987) do not indicate that they processed the data in any way. The data were assembled by the [EdGap.org](https://www.edgap.org/#5/37.875/-96.987) team, so there is always the possibility for human error. Given the public nature of the data, we would be able to consult the original data sources to check the quality of the data if we had any questions.
+
+
+### School information data
+
+The school information data is from the [National Center for Education Statistics](https://nces.ed.gov/ccd/pubschuniv.asp). This data set consists of basic identifying information about schools and can be assumed to be of reasonably high quality. As for the EdGap.org data, the school information data is public, so we would be able to consult the original data sources to check the quality of the data if we had any questions.
+
+
+### Data ethics
+
+#### Data Science Ethics Checklist
+
+[![Deon badge](https://img.shields.io/badge/ethics%20checklist-deon-brightgreen.svg?style=popout-square)](http://deon.drivendata.org/)
+
+**A. Problem Formulation**
+
+ - [ ] **A.1 Well-Posed Problem**: Is it possible to answer our question with data? Is the problem well-posed?
+
+**B. Data Collection**
+
+ - [ ] **B.1 Informed consent**: If there are human subjects, have they given informed consent, where subjects affirmatively opt-in and have a clear understanding of the data uses to which they consent?
+ - [ ] **B.2 Collection bias**: Have we considered sources of bias that could be introduced during data collection and survey design and taken steps to mitigate those?
+ - [ ] **B.3 Limit PII exposure**: Have we considered ways to minimize exposure of personally identifiable information (PII) for example through anonymization or not collecting information that isn't relevant for analysis?
+ - [ ] **B.4 Downstream bias mitigation**: Have we considered ways to enable testing downstream results for biased outcomes (e.g., collecting data on protected group status like race or gender)?
+
+**C. Data Storage**
+
+ - [ ] **C.1 Data security**: Do we have a plan to protect and secure data (e.g., encryption at rest and in transit, access controls on internal users and third parties, access logs, and up-to-date software)?
+ - [ ] **C.2 Right to be forgotten**: Do we have a mechanism through which an individual can request their personal information be removed?
+ - [ ] **C.3 Data retention plan**: Is there a schedule or plan to delete the data after it is no longer needed?
+
+**D. Analysis**
+
+ - [ ] **D.1 Missing perspectives**: Have we sought to address blindspots in the analysis through engagement with relevant stakeholders (e.g., checking assumptions and discussing implications with affected communities and subject matter experts)?
+ - [ ] **D.2 Dataset bias**: Have we examined the data for possible sources of bias and taken steps to mitigate or address these biases (e.g., stereotype perpetuation, confirmation bias, imbalanced classes, or omitted confounding variables)?
+ - [ ] **D.3 Honest representation**: Are our visualizations, summary statistics, and reports designed to honestly represent the underlying data?
+ - [ ] **D.4 Privacy in analysis**: Have we ensured that data with PII are not used or displayed unless necessary for the analysis?
+ - [ ] **D.5 Auditability**: Is the process of generating the analysis well documented and reproducible if we discover issues in the future?
+
+**E. Modeling**
+
+ - [ ] **E.1 Proxy discrimination**: Have we ensured that the model does not rely on variables or proxies for variables that are unfairly discriminatory?
+ - [ ] **E.2 Fairness across groups**: Have we tested model results for fairness with respect to different affected groups (e.g., tested for disparate error rates)?
+ - [ ] **E.3 Metric selection**: Have we considered the effects of optimizing for our defined metrics and considered additional metrics?
+ - [ ] **E.4 Explainability**: Can we explain in understandable terms a decision the model made in cases where a justification is needed?
+ - [ ] **E.5 Communicate bias**: Have we communicated the shortcomings, limitations, and biases of the model to relevant stakeholders in ways that can be generally understood?
+
+**F. Deployment**
+
+ - [ ] **F.1 Redress**: Have we discussed with our organization a plan for response if users are harmed by the results (e.g., how does the data science team evaluate these cases and update analysis and models to prevent future harm)?
+ - [ ] **F.2 Roll back**: Is there a way to turn off or roll back the model in production if necessary?
+ - [ ] **F.3 Concept drift**: Do we test and monitor for concept drift to ensure the model remains fair over time?
+ - [ ] **F.4 Unintended use**: Have we taken steps to identify and prevent unintended uses and abuse of the model and do we have a plan to monitor these once the model is deployed?
+
+*Data Science Ethics Checklist generated with [deon](http://deon.drivendata.org).*
+
+We will discuss these issues in class.
+
+## Data Preparation
+
+### Load necessary packages
+
+
+```{r}
+#readxl lets us read Excel files
+library(readxl)
+#GGally has a nice pairs plotting function
+library(GGally)
+#skimr provides a nice summary of a data set
+library(skimr)
+#leaps will be used for model selection
+library(leaps)
+#kableExtra will be used to make tables in the html document
+library(kableExtra)
+#latex2exp lets us use LaTex in ggplot
+library(latex2exp)
+#tidyverse contains packages we will use for processing and plotting data
+library(tidyverse)
+```
+
+### Load the data 
+
+#### Load the EdGap set
+
+$\rightarrow$ Load the data set contained in the file `EdGap_data.xlsx` and name the data frame `edgap`.
+
+```{r}
+
+edgap <- read_excel("EdGap_data.xlsx")
+
+```
+
+### Explore the contents of the data set
+
+
+$\rightarrow$ Look at the first few rows of the data frame. 
+
+```{r}
+
+head(edgap, n = 5)
+
+```
+
+Use the `View` function to explore the full data set.
+
+```{r, eval=FALSE}
+
+View(edgap)
+
+```
+
+#### Load school information data
+
+$\rightarrow$ Load the data set contained in the file `ccd_sch_029_1617_w_1a_11212017.csv` and name the data frame `school_info`.
+
+```{r}
+
+school_info <- read_csv("ccd_sch_029_1617_w_1a_11212017.csv")
+
+```
+
+
+$\rightarrow$ Look at the first few rows of the data frame. 
+
+```{r}
+
+head(school_info, n = 5)
+
+```
+
+### Check for a tidy data frame
+
+In a tidy data set, each column is a variable or id and each row is an observation. We again start by looking at the head of the data frame to determine if the data frame is tidy.
+
+#### EdGap data
+
+```{r}
+
+head(edgap)
+
+```
+
+The units of observation are the schools. Each school occupies one row of the data frame, which is what we want for the rows.
+
+<br>
+
+$\rightarrow$ What variables are present? What types of variables are present?
+
+```{r}
+
+skim(edgap)
+
+```
+
+$\rightarrow$ Is the `edgap` data frame tidy?
+
+Yes, each column is a variable or id and each row is an observation, so the data frame is tidy.
+
+#### School information data
+
+We again start by looking at the head of the data frame to determine if the data frame is tidy.
+
+```{r}
+
+head(school_info)
+
+```
+
+It is more difficult to assess whether this data frame is tidy because of the large number of columns with confusing names.
+
+We have 65 columns, but many of the columns are identifying features of the school and are irrelevant for the analysis. We will select a subset of columns and do the analysis on the subset.
+
+#### Select a subset of columns
+
+We want to select the following variables:
+
+```{r, echo=FALSE, warning=FALSE}
+
+column_names = c("NCESSCH", "MSTATE", "MZIP", "SCH_TYPE_TEXT", "LEVEL")
+
+column_description = c("NCES School ID", "State name", "Zip code", "School type", "LEVEL")
+
+data.frame(name = column_names, description = column_description) %>% 
+  kbl() %>% 
+  kable_styling()
+
+```
+<br>
+
+$\rightarrow$ Use the `select` function to select these columns from the data frame. 
+
+```{r}
+
+#We redefine the data frame to be the smaller version
+school_info <- school_info %>% 
+  select(NCESSCH,MSTATE,MZIP,SCH_TYPE_TEXT,LEVEL)
+
+```
+
+$\rightarrow$ Examine the head of the new, smaller data frame
+
+```{r}
+
+head(school_info)
+
+```
+
+
+
+$\rightarrow$ Is the data frame tidy?
+
+Yes, each column is a variable or id and each row is an observation, so the data frame is tidy.
+
+### Further exploration of basic properties
+
+#### EdGap data
+
+$\rightarrow$ How many observations are in the EdGap data set?
+
+```{r}
+
+nrow(edgap)
+
+```
+
+
+#### School information data
+
+$\rightarrow$ How many observations are in the school information data set?
+
+```{r}
+
+nrow(school_info)
+
+```
+
+### Data cleaning
+
+#### Rename variables
+
+In any analysis, we might rename the variables in the data frame to make them easier to work with. We have seen that the variable names in the `edgap` data frame allow us to understand them, but they can be improved. In contrast, many of the variables in the `school_info` data frame have confusing names.
+
+Importantly, we should be thinking ahead to joining the two data frames based on the school ID. To facilitate this join, we should give the school ID column the same name in each data frame.
+
+#### EdGap data
+
+$\rightarrow$ View the column names for the EdGap data
+
+
+To follow best practices, we should
+
+1. Use all lowercase letters in variable names.
+2. Use underscores `_` between words in a variable name. Do not use blank spaces, as they have done.
+3. Do not use abbreviations, e.g. `Pct`, that can easily be written out.
+4. Be consistent with naming structure across variables. For example, the descriptions `rate`, `percent`, `median`, and `average` should all either be at the beginning or end of the name. 
+
+
+We will use the `rename` function from the `dplyr` package to rename the columns.
+
+```{r}
+
+#The new name for the column is on the left of the =
+
+edgap <- edgap %>% 
+  rename(id = "NCESSCH School ID",
+         rate_unemployment = "CT Unemployment Rate",
+         percent_college = "CT Pct Adults with College Degree",
+         percent_married = "CT Pct Childre In Married Couple Family",
+         median_income = "CT Median Household Income",
+         average_act = "School ACT average (or equivalent if SAT score)",
+         percent_lunch = "School Pct Free and Reduced Lunch")
+
+```
+
+$\rightarrow$ Use the `names` function to see that the names have changed
+
+```{r}
+
+names(edgap)
+
+```
+
+#### School information data
+
+$\rightarrow$ View the column names for the school information data
+
+```{r}
+
+names(school_info)
+
+```
+
+The names can be improved for readability. We also have the constraint that we rename `ncessch` to `id` to be consistent with the `edgap` data.
+
+Rename the columns of the school information data frame.
+
+```{r}
+
+school_info <- school_info %>% 
+  rename(id = "NCESSCH",
+         state = "MSTATE",
+         zip_code = "MZIP",
+         school_type = "SCH_TYPE_TEXT",
+         school_level = "LEVEL"
+         )
+
+#Print the names to see the change
+names(school_info)
+
+```
+
+#### Join
+
+We will join the `edgap` and `school_info` data frames based on the school ID. We should first note that the `id` is coded differently in the two data frames:
+
+```{r}
+
+typeof(edgap$id)
+
+typeof(school_info$id)
+
+```
+
+While `id` is a number, it is a categorical variable and should be represented as a character variable in R. 
+
+
+Convert `id` in `edgap` id to a character variable:
+
+We will use the `mutate` function from the `dplyr` package to rename the columns.
+
+```{r}
+
+edgap <- edgap %>% 
+  mutate(id = as.character(id))
+
+#Check that the type has been converted to character
+typeof(edgap$id)
+
+```
+
+We will now join the data frames. We want to perform a left join based on the school ID `id` so that we incorporate all of the school information into the `edgap` data frame.
+
+```{r}
+
+edgap <- edgap %>% 
+  left_join(school_info, by = "id") 
+  
+```
+
+Examine the head of the new data frame:
+```{r}
+
+head(edgap)
+
+```
+
+#### Identify and deal with missing values
+
+$\rightarrow$ How many missing values are there in each column? Give the number of missing values and the percent of values in each column that are missing.
+
+```{r}
+
+edgap %>% 
+  map_df(~sum(is.na(.)))
+
+```
+
+
+Recall that missing values are coded in R with `NA`, or they may be empty. We want to convert empty cells to `NA`, so that we can use the function `is.na` to find all missing values. The function `read_excel` that we used to read in the data does this automatically, so we do not need to take further action to deal with empty cells.
+
+```{r}
+
+edgap %>% 
+  map_df(~sum(is.na(.)))/nrow(edgap)*100 
+
+```
+
+$\rightarrow$ Find the rows where the missing value occurs in each column.
+
+```{r}
+
+apply(is.na(edgap),2,which)
+
+```
+
+Now we need to decide how to deal with the `NA`s. We have a few decisions to make:
+
+1. Do we drop rows that have `NA`s?
+2. Do we replace `NA`s with something like the mean of the variable?
+3. Do we replace `NA`s with estimates based on the other variable values?
+
+There are some schools that are missing all four of the socioeconomic variables, e.g. at rows 142 and 205. However, many of the schools are missing only a subset of the variables. If we drop rows that have `NA`s, then we will negatively affect our analysis using the variables where data were present. So, we will not drop the rows in this data set that are missing the socioeconomic variables. We have so few missing values from each value that we will not worry about replacing `NA`s with some other value. We will selectively omit the `NA`s when working with those columns.
+
+There are, however, 88 schools where we do not have the school information. This raises the possibility that the information is unreliable. Because we are not able to check from the source, we will omit these rows from the data set.
+
+$\rightarrow$ Use the `filter` function to drop only those rows where the state information is missing.
+
+```{r}
+
+edgap <- edgap %>% 
+  filter(is.na(state) == FALSE) 
+
+```
+
+Recheck for missing values:
+```{r}
+
+skim(edgap)
+
+```
+
+
+### Are there data points that look like errors?
+
+We will do some quality control for the data set.
+
+We can check the range of each variable to see that the values fall in the expected ranges.
+
+```{r}
+
+summary(edgap)
+
+```
+
+There are a few suspicious values. The minimum `average_act` is -3.071, but ACT scores must be non-negative. Similarly, the minimum `percent_lunch` is -0.05455, but a percent must be non-negative. These are out-of-range values. We do not have access to information about how these particular data points were generated, so we will remove them from the data set by converting them to `NA`.
+
+```{r}
+
+#Number of NA ACT scores before conversion
+sum(is.na(edgap$average_act))
+
+#Convert negative scores to NA
+edgap[edgap$average_act < 0,"average_act"] = NA
+
+#Number of NA ACT scores after conversion
+sum(is.na(edgap$average_act))
+
+```
+
+There were 3 schools with negative ACT scores, where the values were omitted from the data set.
+
+```{r}
+
+#Number of NA percent_lunch values before conversion
+sum(is.na(edgap$percent_lunch))
+
+#Convert negative values to NA
+edgap[edgap$percent_lunch < 0,"percent_lunch"] = NA
+
+#Number of NA percent_lunch values after conversion
+sum(is.na(edgap$percent_lunch))
+
+```
+
+There were 20 schools with negative percent free or reduced lunch, where the values were omitted from the data set.
+
+
+
+$\rightarrow$ What school levels are present in the data set and with what frequency? Present the results as a table and as a bar graph.
+
+```{r}
+
+edgap %>% 
+  count(school_level) %>%
+  mutate(school_level = fct_reorder(school_level, n)) %>% 
+  ggplot(aes(x = school_level, y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "School level", y = "Count") +
+  theme_bw()
+
+```
+
+$\rightarrow$ Modify the `edgap` data frame to include only the schools that are high schools.
+
+```{r}
+
+edgap <- edgap %>% 
+  filter(school_level == 'High')
+edgap %>% 
+  count(school_level) %>% 
+  mutate(proportion = round(n/sum(n),3))
+
+```
+
+## Exploratory data analysis
+
+
+We have two main goals when doing exploratory data analysis. The first is that we want to understand the data set more completely. The second goal is to explore relationships between the variables to help guide the modeling process to answer our specific question.
+
+
+### Graphical summaries
+
+Make a pairs plot of the ACT scores and the socioeconomic variables. We will use the `ggpairs` function from the `GGally` package. 
+
+```{r warning=FALSE}
+
+#It may take a few seconds to produce the plot
+
+edgap %>% 
+  select(-c(id,state,zip_code,school_type,school_level)) %>% 
+  ggpairs(lower = list(continuous=wrap("smooth"))) +
+  theme_bw()
+
+```
+
+#### Distributions of individual numerical variables
+
+$\rightarrow$ Describe the shape of the distribution of each variable. 
+
+We examine the density plots along the main diagonal of the pairs plots.
+
+All distributions appear to be unimodal.
+
+rate_unemployment has a positively skewed distribution. The values near 0.6 may be outliers.
+
+percent_college has a roughly symmetric distribution.
+
+percent_married has a negatively skewed distribution.
+
+average_act has an approximately normal distribution. This is not surprising for a distribution of averages.
+
+median_income has a positively skewed distribution, which is what you expect for income distributions.
+
+percent_lunch has a slightly positively skewed distribution.
+
+#### Categorical variables
+
+What states are present in the data set and with what frequency?
+
+$\rightarrow$ First find the states present.
+
+```{r}
+
+edgap %>% 
+  select(state) %>% 
+  unique()
+
+```
+
+$\rightarrow$ Now count the observations by state. Display the results as a bar graph.
+
+```{r}
+
+edgap %>% 
+  count(state) %>% 
+  ggplot(aes(x = state, y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "State", y = "Count") +
+  theme_bw()
+
+```
+
+$\rightarrow$ Reorder the states by count using `fct_reorder`
+
+```{r}
+
+edgap %>% 
+  count(state) %>%
+  mutate(state = fct_reorder(state, n)) %>% 
+  ggplot(aes(x = state, y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "State", y = "Count") +
+  theme_bw()
+
+```
+
+$\rightarrow$ What school types are present in the data set and with what frequency? Present the results as a table and as a bar graph.
+
+```{r}
+
+edgap %>% 
+  count(school_type) %>% 
+  mutate(proportion = round(n/sum(n),3))
+
+```
+
+#### Focus on relationships with `average_act`
+
+Our primary goal is to determine whether there is a relationship between the socioeconomic variables and `average_act`, so we will make plots to focus on those relationships.
+
+The largest correlation coefficient between a socioeconomic variable and `average_act` is for `percent_lunch`, so we will start there.
+
+$\rightarrow$ Make a scatter plot of `percent_lunch` and `average_act`
+
+```{r}
+
+ggplot(edgap, aes(x = percent_college, y = average_act)) +
+  geom_point() +
+  labs(x = 'Percent college', y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+$\rightarrow$ Make a scatter plot of `median_income` and `average_act`
+
+```{r}
+
+ggplot(edgap, aes(x = percent_married, y = average_act)) +
+  geom_point() +
+  labs(x = 'Percent college', y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+$\rightarrow$ `median_income` has a skewed distribution, so make a scatter plot with `median_income` plotted on a log scale.
+
+```{r}
+
+ggplot(edgap, aes(x = median_income, y = average_act)) +
+  geom_point() +
+  scale_x_log10() +
+  labs(x = 'Median income ($)', y = 'Average school ACT or equivalent if SAT' ) +
+  theme_bw()
+
+```
+
+$\rightarrow$ Make a scatter plot of `percent_college` and `average_act`
+
+```{r}
+
+ggplot(edgap, aes(x = percent_college, y = average_act)) +
+  geom_point() +
+  labs(x = 'Percent college', y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+$\rightarrow$ Make a scatter plot of `percent_married` and `average_act`
+
+```{r}
+
+ggplot(edgap, aes(x = percent_married, y = average_act)) +
+  geom_point() +
+  labs(x = 'Percent college', y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+$\rightarrow$ Make a scatter plot of `rate_unemployment` and `average_act`
+
+```{r}
+
+ggplot(edgap, aes(x = rate_unemployment, y = average_act)) +
+  geom_point() +
+  labs(x = 'Rate of unemployment', y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+`rate_unemployment` has a positively skewed distribution, so we should make a scatter plot on a transformed scale. There are values of `rate_unemployment` that are equal to zero,
+```{r}
+
+library(latex2exp) #This library is used for LaTex in the axis labels
+
+edgap %>% 
+  ggplot(aes(x = sqrt(rate_unemployment), y = average_act)) +
+  geom_point() +
+  labs(x = TeX('$\\sqrt{$Rate of unemployment$}$'), y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+so we will use a square root transformation, rather than a log transformation.
+
+
+```{r}
+
+library(latex2exp) #This library is used for LaTex in the axis labels
+
+edgap %>% 
+  ggplot(aes(x = sqrt(rate_unemployment), y = average_act)) +
+  geom_point() +
+  labs(x = TeX('$\\sqrt{$Rate of unemployment$}$'), y = 'Average school ACT or equivalent if SAT') +
+  theme_bw()
+
+```
+
+#### Numerical summaries
+
+$\rightarrow$ Use the `skim` function to examine the basic numerical summaries for each variable.
+
+```{r}
+
+edgap %>% select(-id) %>% skim()
+
+```
+
+## Model
+
+Our exploratory data analysis has led to the following observations that will help guide the modeling process:
+
+1. Each of the socioeconomic variables is associated with the ACT score and is worthwhile to consider as a predictor.
+2. Some of the socioeconomic variables may have a nonlinear relationship with the ACT score, so nonlinear models should be explored.
+3. The socioeconomic variables are correlated with each other, so the best prediction of ACT score might not include all socioeconomic variables.
+
+### Simple linear regression with each socioeconomic predictor
+
+In this project, we are very concerned with understanding the relationships in the data set; we are not only concerned with building a model with the highest prediction accuracy. Therefore, we will start by looking at simple linear regression models using each socioeconomic predictor. 
+
+#### Percent free or reduced lunch
+
+**Fit a model**
+
+We want to fit the simple linear regression model
+
+`average_act` $\approx \beta_0 + \beta_1$ `percent_lunch`
+
+Use the function `lm` to fit a simple linear regression model.
+
+```{r}
+
+fit_pl <- lm(average_act ~ percent_lunch, data = edgap)
+
+```
+
+Use the `summary` function to 
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+summary(fit_pl)$coefficients
+
+```
+
+The intercept is 23.7 and the slope is -8.39. The intercept is interpreted as the best estimate for the mean ACT score when `percent_lunch` is zero. The slope can be interpreted as saying that a `percent_lunch` increase of 0.1 is associated with a decrease in the estimated mean ACT score of -0.839 points. 
+
+The slope is highly statistically significant, as the p-values are reported as zero. So, there is a statistically significant relationship between `percent_lunch` and the average ACT score in a school. 
+
+Plot the regression line together with the scatter plot
+
+```{r, warning=FALSE}
+
+#geom_smooth(method = "lm",formula = y ~ x) adds the regression line to the scatter plot
+
+ggplot(edgap, aes(x = percent_lunch, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Percent free or reduced lunch", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+
+
+**Assess the accuracy of the fit**
+
+Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_pl)$r.squared
+
+```
+
+The simple linear regression model using percent free or reduced lunch as a predictor can explain 61.6% in the variance of the ACT score. 
+
+
+```{r}
+
+summary(fit_pl)$sigma
+
+```
+
+The residual standard error is 1.56 points. This means that the model is off by about 1.56 points, on average. 
+
+Together, these results show that we can make a good prediction of the average ACT score in a school only by knowing the percent of students receiving free or reduced lunch.
+
+Note that, in this example, we called different components from the `summary` output individually. We took this approach to walk through each step of the analysis, but you can simply look at the output of `summary(fit_pl)` to see all of the information at once.
+
+**Residual plot**
+
+Examine a residual plot to see if we can improve the model through a transformation of the `percent_lunch` variable.
+
+```{r, warning=FALSE}
+
+#We will use ggplot2 to make the residual plot. You can also use plot(fit_pl) 
+ggplot(fit_pl,aes(x=percent_lunch, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Percent free or reduced lunch", y = "Residuals") +
+  theme_bw()
+
+```
+
+The residual plot does not have much systematic structure, so we have used `percent_lunch` as well as we can as a predictor. We do not need to consider a more complicated model that only uses `percent_lunch` as an input variable.
+
+
+#### Median income
+
+**Fit a model**
+
+We want to fit the simple linear regression model
+
+`average_act` $\approx \beta_0 + \beta_1$ `median_income`
+
+$\rightarrow$ Use the function `lm` to fit a simple linear regression model.
+
+```{r}
+
+fit_mi <- lm(average_act ~ median_income, data = edgap)
+
+```
+
+$\rightarrow$ Use the `summary` function to:
+
+```{r}
+
+summary(fit_mi)$coefficients
+
+```
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+edgap <- edgap %>% 
+  mutate(median_income_10k = median_income/1e4)
+
+fit_mi <- lm(average_act ~ median_income_10k, data = edgap)
+
+summary(fit_mi)$coefficients
+
+```
+
+$\rightarrow$ Plot the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = median_income_10k, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Median Household Income (ten thousand $)", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+**Assess the accuracy of the fit**
+
+$\rightarrow$ Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_mi)$r.squared
+summary(fit_mi)$sigma
+
+```
+
+**Residual plot**
+
+$\rightarrow$ Examine a residual plot to see if we can improve the model through a transformation of the `median_income_10` variable.
+
+```{r}
+
+ggplot(fit_mi,aes(x=median_income_10k, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Median Household Income (ten thousand $)", y = "Residuals") +
+  theme_bw()
+
+```
+
+**Log transformation**
+
+**Fit the model**
+
+$\rightarrow$ Fit a linear regression model using the log of `median_income_10` as the predictor.
+
+```{r}
+
+fit_mi_log <- lm(average_act ~ log10(median_income_10k), data = edgap)
+
+```
+
+$\rightarrow$ Use the `summary` function to:
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+summary(fit_mi_log)$coefficients
+
+```
+
+$\rightarrow$ Plot the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = log10(median_income_10k), y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Log of median Household Income", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+**Assess the accuracy of the fit**
+  
+$\rightarrow$ Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_mi_log)$r.squared
+summary(fit_mi_log)$sigma
+
+```
+
+**Residual plot**
+
+$\rightarrow$ Examine a residual plot to see if we can improve the model through a transformation of the input.
+
+```{r}
+
+ggplot(fit_mi_log, aes(x=.fitted, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Log Median Household Income", y = "Residuals") +
+  theme_bw()
+
+```
+
+#### Percent college
+
+**Fit a model**
+
+We want to fit the simple linear regression model
+
+`average_act` $\approx \beta_0 + \beta_1$ `percent_college`
+
+$\rightarrow$ Use the function `lm` to fit a simple linear regression model.
+
+```{r}
+
+fit_pc <- lm(average_act ~ percent_college, data = edgap)
+
+```
+
+$\rightarrow$ Use the `summary` function to 
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+summary(fit_pc)$coefficients
+
+```
+
+$\rightarrow$ Plot the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = percent_college, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Percent college", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+**Assess the accuracy of the fit**
+
+$\rightarrow$ Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_pc)$r.squared
+summary(fit_pc)$sigma
+
+```
+
+**Residual plot**
+
+$\rightarrow$ Examine a residual plot to see if we can improve the model through a transformation of the input variable.
+
+```{r}
+
+ggplot(fit_pc, aes(x=percent_college, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Percent college", y = "Residuals") +
+  theme_bw()
+
+```
+
+$\rightarrow$ Fit and assess a quadratic model
+
+```{r}
+
+fit_pc_quad <- lm(average_act ~ poly(percent_college,2, raw = T), data = edgap)
+summary(fit_pc_quad)
+
+```
+
+#### Rate of unemployment
+
+**Fit a model**
+
+We want to fit the simple linear regression model
+
+`average_act` $\approx \beta_0 + \beta_1$ `rate_unemployment`
+
+$\rightarrow$ Use the function `lm` to fit a simple linear regression model.
+
+```{r}
+
+fit_ru <- lm(average_act ~ rate_unemployment, data = edgap)
+
+```
+
+$\rightarrow$ Use the `summary` function to:
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+summary(fit_ru)$coefficients
+
+```
+
+$\rightarrow$ Plot the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = rate_unemployment, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Unemployment rate", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+**Assess the accuracy of the fit**
+
+$\rightarrow$ Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_ru)$r.squared
+summary(fit_ru)$sigma
+
+```
+
+**Residual plot**
+
+$\rightarrow$ Examine a residual plot to see if we can improve the model.
+
+```{r}
+
+ggplot(fit_ru,aes(x=rate_unemployment, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Unemployment rate", y = "Residuals") +
+  theme_bw()
+
+```
+
+```{r}
+
+fit_ru_sqrt <- lm(average_act ~ sqrt(rate_unemployment), data = edgap)
+summary(fit_ru_sqrt)
+
+```
+
+Try a square root transformation of `rate_unemployment`
+
+```{r}
+
+ggplot(edgap, aes(x = rate_unemployment, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x) +
+  geom_smooth(method = "lm", formula = y ~ sqrt(x),color = 'red') +
+  labs(x = "Unemployment rate", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+#### Percent married
+
+**Fit a model**
+
+We want to fit the simple linear regression model
+
+`average_act` $\approx \beta_0 + \beta_1$ `percent_married`
+
+$\rightarrow$ Use the function `lm` to fit a simple linear regression model.
+
+```{r}
+
+fit_pm <- lm(average_act ~ percent_married, data = edgap)
+
+```
+
+$\rightarrow$ Use the `summary` function to:
+
+1. Interpret the coefficients in the model.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+
+```{r}
+
+summary(fit_pm)$coefficients
+
+```
+
+$\rightarrow$ Plot the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = percent_married, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Percent married", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+**Assess the accuracy of the fit**
+
+$\rightarrow$ Examine the $R^2$ and the residual standard error
+
+```{r}
+
+summary(fit_pm)$r.squared
+summary(fit_pm)$sigma
+
+```
+
+**Residual plot**
+
+$\rightarrow$ Examine a residual plot to see if we can improve the model.
+
+```{r}
+
+ggplot(fit_pm,aes(x=percent_married, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Percent married", y = "Residuals") +
+  theme_bw()
+
+```
+
+### Model selection
+
+Now that understand how each variable is individually related to the ACT score, we want to know how to best use all of the socioeconomic variables to predict the ACT score.
+
+We do not have many input variables, so we can examine the full model.
+
+```{r}
+
+fit_full <- lm(average_act ~ percent_lunch + median_income + rate_unemployment + percent_college + percent_married, data = edgap)
+
+```
+
+Examine the summary of the fit
+
+```{r}
+
+summary(fit_full)
+
+```
+
+The coefficients for `median_income` and `percent_married` are not statistically significant. Additionally, the sign of the coefficients for `median_income` and `percent_married` do not make sense. These results support removing `median_income` and `percent_married` from the model. 
+
+
+#### Do best subset selection
+
+Use the `regsubsets` function from the `leaps` package to perform best subset selection in order to choose the best model to predict `average_act` from the socioeconomic predictors. 
+
+```{r}
+
+#perform best subset selection
+regfit_full <- regsubsets(average_act ~ percent_lunch + median_income + rate_unemployment + percent_college + percent_married, data = edgap)
+
+```
+
+Get the summary of the best subset selection analysis
+
+```{r}
+
+reg_summary <- summary(regfit_full)
+
+```
+
+
+What is the best model obtained according to Cp, BIC, and adjusted $R^2$? Make a plot of Cp, BIC, and adjusted $R^2$ vs. the number of variables in the model.
+
+```{r}
+#Set up a three panel plot
+par(mfrow = c(1,3))
+
+#Plot Cp
+plot(reg_summary$cp,type = "b",xlab = "Number of variables",ylab = "Cp")
+#Identify the minimum Cp
+ind_cp = which.min(reg_summary$cp)
+points(ind_cp, reg_summary$cp[ind_cp],col = "red",pch = 20)
+
+#Plot BIC
+plot(reg_summary$bic,type = "b",xlab = "Number of variables",ylab = "BIC")
+#Identify the minimum BIC
+ind_bic = which.min(reg_summary$bic)
+points(ind_bic, reg_summary$bic[ind_bic],col = "red",pch = 20)
+
+#Plot adjusted R^2
+plot(reg_summary$adjr2,type = "b",xlab = "Number of variables",ylab = TeX('Adjusted $R^2$'),ylim = c(0,1))
+
+#Identify the maximum adjusted R^2
+ind_adjr2 = which.max(reg_summary$adjr2)
+points(ind_adjr2, reg_summary$adjr2[ind_adjr2],col = "red",pch = 20)
+
+```
+
+The three measures agree that the best model has three variables.
+
+
+Show the best model for each possible number of variables. Focus on the three variable model.
+
+```{r}
+reg_summary$outmat
+```
+
+The best model uses the predictors `percent_lunch`, `rate_unemployment` and `percent_college`.
+
+Fit the best model and examine the results
+
+```{r}
+
+fit_best <- lm(average_act ~ percent_lunch + rate_unemployment + percent_college, data = edgap)
+
+```
+
+
+```{r}
+
+summary(fit_best)
+
+```
+
+
+#### Relative importance of predictors
+
+To compare the magnitude of the coefficients, we should first normalize the predictors. Each of the predictors `percent_lunch`, `rate_unemployment` and `percent_college` is limited to the interval (0,1), but they occupy different parts of the interval. We can normalize each variable through a z-score transformation:
+
+```{r}
+
+scale_z <- function(x, na.rm = TRUE) (x - mean(x, na.rm = na.rm)) / sd(x, na.rm)
+
+edgap_z <- edgap %>% 
+  mutate_at(c("percent_lunch","rate_unemployment","percent_college"),scale_z) 
+
+```
+
+$\rightarrow$ Fit the model using the transformed variables and examine the coefficients
+
+```{r}
+
+fit_z <- lm(average_act ~ percent_lunch + rate_unemployment + percent_college, data = edgap_z)
+summary(fit_z)
+
+```
+
+## Additional step
+
+$\rightarrow$ First we load in the NSES data and join it with the edgap data
+
+```{r}
+
+Public_Schools <- read_excel("Public Schools.xlsx")
+
+view(Public_Schools)
+
+```
+
+
+```{r}
+
+edgap <- edgap %>%
+  left_join(Public_Schools, by = "id") %>%
+  select(-ends_with(".y"), -ends_with(".x")) %>%
+  filter(st_ratio <= 50) %>%
+  filter(is.na(average_act) == FALSE)
+
+```
+
+$\rightarrow$ We use the function lm to fit a simple linear regression model and look at the summary.
+
+```{r}
+
+fit_st <- lm(average_act ~ st_ratio, data=edgap)
+summary(fit_st)
+
+```
+
+1. Interpret the coefficients in the model.
+  The intercept is 23.7 and the slope is -8.39.
+2. Assess the statistical significance of the coefficient on the predictor variable.
+  The p value is less than 0.05, so the coefficients are statistically significant.
+
+
+$\rightarrow$ Plotting the regression line together with the scatter plot
+
+```{r}
+
+ggplot(edgap, aes(x = st_ratio, y = average_act)) + 
+  geom_point() + 
+  geom_smooth(method = "lm",formula = y ~ x) +
+  labs(x = "Student-Teacher Ratio", y = "School ACT average (or equivalent if SAT score)") +
+  theme_bw()
+
+```
+
+$\rightarrow$ Assessing the accuracy of the fit
+
+```{r}
+
+summary(fit_st)$r.squared
+summary(fit_st)$sigma
+
+```
+
+$\rightarrow$ Residual plot
+```{r, warning=FALSE}
+
+ggplot(fit_st,aes(x=st_ratio, y=.resid)) + 
+  geom_point() +
+  geom_smooth(method = "loess", formula = y ~ x) +
+  labs(x = "Student Teacher Ratio", y = "Residuals") +
+  theme_bw()
+
+```
+
+$\rightarrow$ Perfomring the best subset selection
+
+```{r}
+
+#perform best subset selection
+regfit_full <- regsubsets(average_act ~ percent_lunch + median_income + rate_unemployment + percent_college + percent_married + st_ratio, data = edgap)
+
+```
+
+$\rightarrow$ Get the summary of the best subset selection analysis
+
+```{r}
+
+reg_summary <- summary(regfit_full)
+
+```
+
+$\rightarrow$ Looking at what the best model obtained according to Cp, BIC, and adjusted $R^2$?
+```{r}
+#Set up a three panel plot
+par(mfrow = c(1,3))
+
+#Plot Cp
+plot(reg_summary$cp,type = "b",xlab = "Number of variables",ylab = "Cp")
+#Identify the minimum Cp
+ind_cp = which.min(reg_summary$cp)
+points(ind_cp, reg_summary$cp[ind_cp],col = "red",pch = 20)
+
+#Plot BIC
+plot(reg_summary$bic,type = "b",xlab = "Number of variables",ylab = "BIC")
+#Identify the minimum BIC
+ind_bic = which.min(reg_summary$bic)
+points(ind_bic, reg_summary$bic[ind_bic],col = "red",pch = 20)
+
+#Plot adjusted R^2
+plot(reg_summary$adjr2,type = "b",xlab = "Number of variables",ylab = TeX('Adjusted $R^2$'),ylim = c(0,1))
+
+#Identify the maximum adjusted R^2
+ind_adjr2 = which.max(reg_summary$adjr2)
+points(ind_adjr2, reg_summary$adjr2[ind_adjr2],col = "red",pch = 20)
+
+```
+
+Out of these three models, the best model would be using a BIC model with four variables
+
+
+$\rightarrow$ Showing the best model for each possible number of variables.
+
+```{r}
+
+reg_summary$outmat
+coef(regfit_full,4)
+
+```
+
+$\rightarrow$ Fitting the best model and examine the results
+
+```{r}
+
+fit_best <- lm(average_act ~ percent_lunch + rate_unemployment + percent_college + st_ratio, data = edgap)
+summary(fit_best)
+
+```
+
+## Conclusion
+
+```
+When we look at the relationship between the average SAT and ACT scores with the socioeconomic factors in each state, we can answer that the student's performance can be predicted by socioeconomic factors. After we did some data preprocessessing and data cleaning from the Edgap and school information data, we created a simple linear regression for each socioeconomic factor with the Average SAT/ACT. We found they have a pretty strong correlation in determining how well a student can perform in each area. One strong correlation was with the percent_lunch variable, having an R^2 of 0.6155674 and a residual standard error of 1.55522 we can use this information to reliably predict how well a student can perform in the SAT/ACT test based on what school they went to and where they lived. Using the regsubsets function, the best model would have three variables using percent_linch, rate_unemployment, and percent_college since each variable would be statistically significant. There are limitations to what we could assume. The edgap data we used only covered 31 states, so we can only generalize for the states we have. Also, there are some variables that we would have like to look further into, like private schools, school funding, and average GPA for each school. Another limitation we have for the data is that it is a bit outdated. The data given was from 2016 and that it didn't account for all of the events that happened in 2019-2022 that would definetly affect how students would perform since we switched to online learning. For the additional step, we decided to look at the student-to-teacher ratio to the average ACT score. We believed that because teachers are a big reason for how students learn, we believed that the smaller the ratio the better the average score would be. After creating the scatter plot with the linear regression model we saw that it was not the case. The graph showed that the relationship was only slightly correlated and that R^2 was 0.001446322. We were surprised that there is no correlation between those two variables, but it was interesting to see. 
+```
+
+After completing your analyses, you will make your conclusions and communicate your results. Consult Canvas for further directions.
+
+
+
+
+
